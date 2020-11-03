@@ -1,0 +1,564 @@
+---
+title: "BA Mid Project Deep Analysis"
+author: "Group 5: Gabriela Caballero, Kunyang Que, Ullas Srivastava, Yangxin Liu"
+date: "10/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1. Data Preprocessing in MySQL
+
+## 1.1 Delete columns that are all null
+
+```sql
+alter table tb_mid_rivier_users drop column citizenship_country;
+alter table tb_mid_rivier_users drop column lives_in_us;
+alter table tb_mid_rivier_users drop column birth_place;
+alter table tb_mid_rivier_users drop column permanent_resident_number;
+alter table tb_mid_rivier_users drop column intended_school;
+alter table tb_mid_rivier_users drop column intended_concentration;
+alter table tb_mid_rivier_users drop column has_24credits;
+alter table tb_mid_rivier_users drop column has_transfer_credits;
+alter table tb_mid_rivier_users drop column hs_course_credits;
+alter table tb_mid_rivier_users drop column hs_course_title;
+alter table tb_mid_rivier_users drop column hs_degree_earned;
+alter table tb_mid_rivier_users drop column hs_enrollment_date;
+alter table tb_mid_rivier_users drop column hs_major;
+alter table tb_mid_rivier_users drop column college_course_credits;
+alter table tb_mid_rivier_users drop column college_course_title;
+alter table tb_mid_rivier_users drop column college_enrollment_date;
+alter table tb_mid_rivier_users drop column college_street2;
+alter table tb_mid_rivier_users drop column address_mailing_eps_code;
+alter table tb_mid_rivier_users drop column address_mailing_lat;
+alter table tb_mid_rivier_users drop column address_mailing_lng;
+alter table tb_mid_rivier_users drop column address_mailing_ismailing;
+alter table tb_mid_rivier_users drop column milestone_prospect_source;
+alter table tb_mid_rivier_users drop column milestone_checklist_complete_date;
+alter table tb_mid_rivier_users drop column milestone_application_decision_date;
+alter table tb_mid_rivier_users drop column milestone_waitlist_date;
+alter table tb_mid_rivier_users drop column milestone_visit_date;
+alter table tb_mid_rivier_users drop column milestone_interview_date;
+alter table tb_mid_rivier_users drop column first_source_utm_content;
+alter table tb_mid_rivier_users drop column first_source_utm_term;
+alter table tb_mid_rivier_users drop column web_source_utm_content;
+alter table tb_mid_rivier_users drop column web_source_utm_term;
+alter table tb_mid_rivier_users drop column app_source_app_name;
+alter table tb_mid_rivier_users drop column app_source_utm_content;
+alter table tb_mid_rivier_users drop column app_source_utm_term;
+alter table tb_mid_rivier_users drop column intended_concentration_name;
+alter table tb_mid_rivier_users drop column intended_school_name;
+alter table tb_mid_rivier_users drop column milestone_conditional_admit_date;
+alter table tb_mid_rivier_users drop column milestone_hold_date;
+alter table tb_mid_rivier_users drop column territory;
+alter table tb_mid_rivier_users drop column profile_type;
+```
+
+## 1.2 Create analysis tables
+
+### 1.2.1 Basic infomation
+
+```sql
+create table tb_mid_ana_basic(
+    select element_id,
+           gender,
+           date_of_birth,
+           labels,
+           citizenship_status,
+           country_of_birth,
+           english_native_language,
+           years_lived_in_us,
+           native_language,
+           us_visa_holder,
+           visa_type,
+           visa_required
+    from tb_mid_rivier_users
+);
+```
+
+### 1.2.2 Student Information
+
+```sql
+create table tb_mid_ana_stu_info(
+    select element_id,
+           applying_f1,
+           intended_major,
+           student_type,
+           intended_term,
+           intended_campus,
+           academic_load,
+           applied_before,
+           veteran_funds
+    from tb_mid_rivier_users
+);
+```
+
+### 1.2.3 House Infomation
+
+```sql
+create table tb_mid_ana_house_info(
+    select element_id,
+           housing,
+           household_income,
+           household_income_median,
+           household_persons_count,
+           household_value
+    from tb_mid_rivier_users
+);
+```
+
+### 1.2.4 High school and college
+
+```sql
+create table tb_mid_ana_school(
+    select element_id,
+           hs_ceeb,
+           hs_name,
+           hs_end_date,
+           hs_gpa,
+           hs_graduate_date,
+           hs_graduated,
+           hs_street1,
+           hs_street2,
+           hs_city,
+           hs_state,
+           hs_country,
+           hs_zipcode,
+           college_ceeb,
+           college_name,
+           college_degree_earned,
+           college_end_date,
+           college_gpa,
+           college_graduate_date,
+           college_graduated,
+           college_major,
+           college_street1,
+           college_city,
+           college_state,
+           college_country,
+           college_zipcode
+    from tb_mid_rivier_users
+);
+```
+
+### 1.2.5 Address Infomation
+
+```sql
+create table tb_mid_ana_address(
+    select element_id,
+           address_home_city,
+           address_home_country,
+           address_home_state,
+           address_home_province,
+           address_home_zipcode,
+           address_home_zipcode4,
+           address_home_county,
+           address_home_eps_code,
+           address_home_lat,
+           address_home_lng,
+           address_home_ismailing,
+           address_home_minutes_to_campus,
+           address_home_miles_to_campus,
+           address_mailing_city,
+           address_mailing_country,
+           address_mailing_state,
+           address_mailing_province,
+           address_mailing_zipcode,
+           address_mailing_zipcode4,
+           address_mailing_county,
+           address_mailing_minutes_to_campus,
+           address_mailing_miles_to_campus
+    from tb_mid_rivier_users
+);
+```
+
+### 1.2.6 Milestone infomation
+
+```sql
+create table tb_mid_ana_milestone(
+    select element_id,
+           milestone_created_date,
+           milestone_prospect_date,
+           milestone_application_start_date,
+           milestone_application_start_guid,
+           milestone_application_start_apptype,
+           milestone_application_start_term,
+           milestone_application_complete_date,
+           milestone_application_complete_guid,
+           milestone_application_complete_apptype,
+           milestone_application_complete_term,
+           milestone_application_submit_date,
+           milestone_application_submit_guid,
+           milestone_application_submit_apptype,
+           milestone_application_submit_term,
+           milestone_admit_date,
+           milestone_admit_term,
+           milestone_deposit_date,
+           milestone_deposit_term,
+           milestone_withdraw_date,
+           milestone_withdraw_term,
+           milestone_unsubscribe_sms_date,
+           milestone_unsubscribe_sms_number,
+           milestone_unsubscribe_email_date,
+           milestone_unsubscribe_sms_email,
+           milestone_denied_date,
+           milestone_enroll_date,
+           milestone_hardbounce_sms_date,
+           milestone_hardbounce_email_date
+    from tb_mid_rivier_users
+);
+```
+
+# 2. Load Data and Import Library
+
+## 2.1 Import Library
+
+```{r}
+library(dplyr)
+library(sqldf)
+library(ggplot2)
+library(OpenStreetMap)
+```
+
+## 2.2 Load Data
+
+```{r}
+data_basic<-read.csv("/Users/kunyangque/Documents/NYUTandon/course/Business Analysis/Midterm Project/data/01_tb_mid_ana_basic.csv", header=T, na.strings=c("","NA"))
+data_stu_info<-read.csv("/Users/kunyangque/Documents/NYUTandon/course/Business Analysis/Midterm Project/data/02_tb_mid_ana_stu_info.csv", header=T, na.strings=c("","NA"))
+schools<-read.csv("/Users/kunyangque/Documents/NYUTandon/course/Business Analysis/Midterm Project/data/03_tb_mid_ana_school.csv", header = TRUE, na.strings=c("","NA"))
+data_housing<-read.csv("/Users/kunyangque/Documents/NYUTandon/course/Business Analysis/Midterm Project/data/04_tb_mid_ana_address.csv")
+milestones<-read.csv("/Users/kunyangque/Documents/NYUTandon/course/Business Analysis/Midterm Project/data/05_tb_mid_ana_milestone.csv", header=T, na.strings=c("","NA"))
+
+data_major_list<-read.csv("/Users/kunyangque/Documents/NYUTandon/course/Business Analysis/Midterm Project/data/tb_major_list.csv", header=T, na.strings=c("","NA"))
+```
+
+## 3. Characteristics from Basic Information
+
+### 3.1 Age
+
+Select students between the ages of **15** and **24**
+
+```{r}
+Year<-format(as.Date(data_basic$date_of_birth, format = "%m/%d/%Y"), "%Y")
+Year<-as.integer(Year)
+
+data_basic<-mutate(data_basic, birth_year=if_else(Year<20, Year+2000, Year+1900))
+data_basic$age<-2020 - data_basic$birth_year
+
+db_student<-sqldf("select * from data_basic where age >= 15 and age <= 24")
+
+ggplot(data = db_student, mapping = aes(x=age, fill=age)) + geom_bar(stat="count", width=0.5) + 
+geom_text(stat='count',aes(label=..count..), vjust=-0.7, size=3.5)
+```
+
+### 3.2 Major
+
+The **top 10** most popular majors
+
+```{r}
+stu_info<-inner_join(db_student, data_stu_info, by = "element_id")
+major<-sqldf("select intended_major as guid, count(*) as num from stu_info group by intended_major order by num desc")
+
+join_major<-inner_join(major, data_major_list, by="guid")
+major_top_10<-sqldf("select major_name, num from join_major order by num desc limit 10")
+ggplot(data = major_top_10, mapping = aes(x=major_name, y=num)) + 
+geom_bar(stat="identity", width=0.8) + 
+geom_text(aes(label=num), vjust=-0.7, size=3.5)
+```
+
+# 4. Characteristics from Milestone
+
+```{r}
+join_milestone<-inner_join(db_student, milestones, by="element_id")
+```
+
+## 4.1 Applications started by month
+```{r}
+join_milestone$milestone_application_start_date<-as.Date(join_milestone$milestone_application_start_date,"%m/%d/%y")
+
+#Extracting months from the start application date
+join_milestone$createdMonth<-months(join_milestone$milestone_application_start_date)
+
+#Counting applications started by month
+applCreatedByMonth<-aggregate(na.omit(join_milestone$element_id),by=list(join_milestone$createdMonth),FUN="length")
+applCreatedByMonth
+
+#Ordering 
+applCreatedByMonth$Group.1 <- factor(applCreatedByMonth$Group.1,levels = c("January", "February", "March", "April","May", "June","July","August","September","October","November","December"))
+```
+
+```{r}
+#Ploting
+ggplot(applCreatedByMonth,aes(x=Group.1,y=x)) +
+geom_bar(stat="identity",width=0.5) +
+geom_text(aes(label=x), vjust=-0.7, size=3.5) +
+ggtitle("Applications Started by Month") + 
+ylim(0,max(applCreatedByMonth$x))
+```
+
+## 4.2 AVG time to complete an application in months
+```{r cars}
+#Converting into date format
+join_milestone$milestone_application_complete_date<-as.Date(join_milestone$milestone_application_complete_date,"%m/%d/%y")
+join_milestone$milestone_application_start_date<-as.Date(join_milestone$milestone_application_start_date,"%m/%d/%y")
+join_milestone$daysToCompleteApl<-as.numeric(join_milestone$milestone_application_complete_date - join_milestone$milestone_application_start_date)
+#Average days to complete an application
+summary(join_milestone$daysToCompleteApl)
+```
+
+```{r}
+boxplot(join_milestone$daysToCompleteApl)
+```
+
+## 4.3 Percentage of applications started that end up being submited 
+
+```{r}
+appStarted=subset(join_milestone,!is.na(join_milestone$milestone_application_start_date))
+appSubmited=subset(join_milestone,!is.na(join_milestone$milestone_application_submit_date))
+appDiscarded=length(appStarted$element_id)-length(appSubmited$element_id)
+#PercApSubmited=(length(appSubmited$element_id)*100)/length(appStarted$element_id)
+#PercApDiscarded=appStarted- PercApSubmited
+slices <- c(length(appSubmited$element_id), appDiscarded)
+lbls<-c("Applications submited","Applications discarded")
+pct <- round(slices/sum(slices)*100)
+lbls <- paste(lbls, pct) # add percents to labels
+lbls <- paste(lbls,"%",sep="") # ad % to labels
+pieChart=pie(slices,labels = lbls, col=rainbow(length(lbls)),
+   main="Pie Chart of Applications submitted")
+```
+
+## 4.4 Applications submitted that are admited
+```{r}
+appsAdmited=subset(join_milestone,!is.na(join_milestone$milestone_admit_date))
+appsDenied=subset(join_milestone,!is.na(join_milestone$milestone_denied_date))
+PercApAdmited=length(appsAdmited$element_id)
+PercApDenied=length(appsDenied$element_id)
+PercpApsUnk=length(appStarted$element_id)-(PercApAdmited+PercApDenied)
+slices2 <- c(PercApAdmited, PercApDenied,PercpApsUnk)
+lbls2<-c("Applications Admited","Applications Denied","Applications without information")
+pct2 <- round(slices2/sum(slices2)*100)
+lbls2 <- paste(lbls2, pct2) # add percents to labels
+lbls2 <- paste(lbls2,"%",sep="") # ad % to labels
+pieChart2=pie(slices2,labels = lbls2, col=rainbow(length(lbls2)),
+   main="Pie Chart of Admited and Denied Applications")
+```
+## 4.5 Applications admitted per month
+```{r}
+join_milestone$milestone_admit_date<-as.Date(join_milestone$milestone_admit_date,"%m/%d/%y")
+#Extracting months from the admitions application date
+join_milestone$admitedMonth<-months(join_milestone$milestone_admit_date)
+#Counting applications admited by month
+
+applAdmitedByMonth<-aggregate(na.omit(join_milestone$element_id),by=list(join_milestone$admitedMonth),FUN="length")
+applAdmitedByMonth
+#Ordering 
+applAdmitedByMonth$Group.1 <- factor(applAdmitedByMonth$Group.1,levels = c("January", "February", "March", "April","May", "June","July","August","September","October","November","December"))
+```
+
+```{r}
+#Ploting
+ggplot(applAdmitedByMonth,aes(x=Group.1,y=x)) +
+geom_bar(stat="identity",width=0.5) +
+ggtitle("Applications Admited by Month") + 
+geom_text(aes(label=x), vjust=-0.7, size=3.5) + 
+ylim(0,max(applAdmitedByMonth$x))
+```
+
+## 4.6 Applicants admited that end up enrolling and withdrawing
+```{r}
+#Converting into date format
+appsEnrolled=subset(join_milestone,!is.na(join_milestone$milestone_enroll_date))
+PercApEnrolled=length(appsEnrolled$element_id)
+appsWithdraw=subset(join_milestone,!is.na(join_milestone$milestone_withdraw_date))
+PercApWithdrawed=length(appsWithdraw$element_id)
+PerceApAdmitUnkonw=length(appsAdmited$element_id)-(PercApEnrolled+PercApWithdrawed)
+PercApEnrolled
+PercApWithdrawed
+PerceApAdmitUnkonw
+```
+
+```{r}
+slices3 <- c(PercApEnrolled, PercApWithdrawed, PerceApAdmitUnkonw)
+lbls3<-c("Applicants Enrolled","Applications Withdrawed", "Applications without info")
+pct3 <- round(slices3/sum(slices3)*100)
+lbls3 <- paste(lbls3, pct3) # add percents to labels
+lbls3 <- paste(lbls3,"%",sep="") # ad % to labels
+pieChart3=pie(slices3,labels = lbls3, col=rainbow(length(lbls3)),
+   main="Pie Chart of Enrolled and Wirdrawed Applications")
+```
+
+## 4.7 Enrollings per Month
+```{r}
+join_milestone$milestone_enroll_date<-as.Date(join_milestone$milestone_enroll_date,"%m/%d/%y")
+#Extracting months from the enrolled application date
+join_milestone$enrollMonth<-months(join_milestone$milestone_enroll_date)
+#Counting applications enrolled by month
+
+applEnrolledByMonth<-aggregate(na.omit(join_milestone$element_id),by=list(join_milestone$enrollMonth),FUN="length")
+applEnrolledByMonth
+#Ordering 
+applEnrolledByMonth$Group.1 <- factor(applEnrolledByMonth$Group.1,levels = c("January", "February", "March", "April","May", "June","July","August","September","October","November","December"))
+```
+
+```{r}
+#Plotting
+ggplot(applEnrolledByMonth,aes(x=Group.1,y=x)) +
+geom_bar(stat="identity",width=0.5) +
+ggtitle("Applications Enrolled by Month") + 
+geom_text(aes(label=x), vjust=-0.7, size=3.5) + 
+ylim(0,max(applEnrolledByMonth$x))
+```
+
+# 5. Characteristics from school infomation
+
+```{r}
+join_schools<-inner_join(db_student, schools, by="element_id")
+```
+
+## 5.1 High School GPA
+
+```{r}
+library(ggplot2)
+
+schools$hs_gpa <- as.integer(schools$hs_gpa)
+typeof(schools$hs_gpa)
+summary(schools$hs_gpa)
+
+high_gpa <- aggregate(na.omit(schools$element_id), by = list(schools$hs_gpa), FUN = "length")
+high_gpa
+
+high_gpa<- subset(high_gpa,high_gpa$x<4 & high_gpa$x>0)
+
+ggplot(high_gpa,aes(x = reorder (Group.1, -x), y=x) ) +
+geom_bar(stat="identity",width=0.5) + theme(axis.text.x = element_text(angle = 90)) + ggtitle("Students by High School State") + ylim(0,max(high_gpa$x))
+
+```
+
+## 5.2 High School State
+
+```{r}
+hs_state <- aggregate(na.omit(join_schools$element_id), by = list(join_schools$hs_state), FUN = "length")
+hs_state<- subset(hs_state,hs_state$x>1000)
+
+ggplot(hs_state,aes(x = reorder (Group.1, -x), y=x) ) +
+geom_bar(stat="identity",width=0.5) + 
+theme(axis.text.x = element_text(angle = 90)) + 
+geom_text(aes(label=x), vjust=-0.7, size=3.5) +
+ggtitle("Students by High School State") + 
+ylim(0,max(hs_state$x))
+```
+
+## 5.3 College Name 
+
+```{r}
+college_name <- aggregate(na.omit(schools$element_id), by = list(schools$college_name), FUN = "length")
+
+college_name<- subset(college_name,college_name$x>100)
+
+ggplot(college_name,aes(x = reorder (Group.1, -x), y=x) )+
+geom_bar(stat="identity",width=0.8) + theme(axis.text.x = element_text(angle = 90)) + ggtitle("Students by High School State") + ylim(0,max(college_name$x))
+```
+
+## 5.4 College State
+
+```{r}
+college_state <- aggregate(na.omit(join_schools$element_id), by = list(join_schools$college_state), FUN = "length")
+
+college_state<- subset(college_state,college_state$x>20)
+
+ggplot(college_state,aes(x = reorder (Group.1, -x), y=x) ) +
+geom_bar(stat="identity",width=0.8) + theme(axis.text.x = element_text(angle = 90)) + ggtitle("Students by High School State") + ylim(0,max(college_state$x))
+```
+
+## 5.5 College GPA
+
+```{r}
+college_gpa <- join_schools$college_gpa
+summary(college_gpa)
+
+hist(as.numeric(college_gpa))
+```
+
+## 5.6 College Graduation
+
+```{r}
+Graduate_C <- subset(join_schools, join_schools$college_graduated == "t")
+Failed_C <- subset(join_schools, join_schools$college_graduated == "f")
+
+Graduate_C_length <- length(Graduate_C$element_id)
+Failed_C_length <- length(Failed_C$element_id)
+
+graduation <- c(Graduate_C_length, Failed_C_length)
+grad_labels <- c("Graduation","Failed")
+
+portion <- round(graduation/sum(graduation)*100)
+pic_pie <- paste(grad_labels, portion)
+pic_pie <- paste(grad_labels,"%",sep="")
+
+pie(graduation, labels = grad_labels,
+     main="Pie Chart of College Graduation")
+
+```
+
+# 6. Characteristics from Housing Information
+
+```{r}
+join_housing<-inner_join(db_student, data_housing, by="element_id")
+```
+
+## 6.1 Mapping the data_housing for all the applicant's Countries
+```{r}
+#usmap=openmap(
+#c(round(max(data_housing$address_home_lat,na.rm=T),2),round(min(data_housing$address_home_lng,na.rm=T),2)),
+#c(round(min(data_housing$address_home_lat,na.rm=T),2),round(max(data_housing$address_home_lng,na.rm=T),2)),
+#type="osm")
+
+```
+```{r}
+#autoplot.OpenStreetMap(openproj(usmap))+geom_point(data_housing = data_housing,mapping = aes(x=address_home_lng,y=address_home_lat))
+```
+
+## 6.2 Histogram of the most popular cities
+
+```{r}
+#addr-city
+temp<-select(join_housing,col="address_home_city")
+temp<-subset(temp,!is.na(temp) & temp != "" &temp!=0)
+temp<-aggregate(x=temp,by = list(temp$col),FUN=length)
+
+#filtering by the number of col
+temp<- subset(temp,temp$col>1500)
+
+ggplot(temp)+geom_bar(aes(x=reorder(Group.1,-col),y=col),stat="identity")+ theme(axis.text.x = element_text(angle = 90))+
+ggtitle("Most Popular City")
+
+```
+
+## 6.3 Histogram of the most popular States
+
+``` {R}
+#addr-state
+temp<-select(join_housing,col="address_home_state")
+temp<- subset(temp,!is.na(temp) & temp != "" &temp!=0)
+temp<-aggregate(x=temp,by = list(temp$col),FUN=length)
+
+temp<- subset(temp,temp$col>100)
+ggplot(temp)+geom_bar(aes(x=reorder(Group.1,-col),y=col),stat="identity")+ theme(axis.text.x = element_text(angle = 90))+
+ggtitle("Most Popular State")
+```
+
+## 6.4 Histogram of the most popular Counties
+
+``` {R}
+#addr-county
+temp<-select(join_housing,col="address_home_county")
+temp<-subset(temp,!is.na(temp) & temp != "" &temp!=0)
+temp<-aggregate(x=temp,by = list(temp$col),FUN=length)
+
+#clean
+temp<- subset(temp,temp$col>10000)
+ggplot(temp)+geom_bar(aes(x=reorder(Group.1,-col),y=col),stat="identity")+ theme(axis.text.x = element_text(angle = 90)) +
+ggtitle("Most Popular County")
+```

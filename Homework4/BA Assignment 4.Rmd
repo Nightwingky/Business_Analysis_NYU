@@ -1,0 +1,390 @@
+---
+title: "BA Assignment 4"
+author: "Kunyang Que, kq395, N12065518"
+date: "9/29/2020"
+output:
+  html_document: default
+---
+
+```{r}
+library(lubridate)
+library(ggplot2)
+library(sqldf)
+library(dplyr)
+library(treemapify)
+library(maps)
+library(plyr)
+library(pheatmap)
+```
+
+# Problem I: CitiBike anomaly detection & neighborhood usage
+
+## 1.1 Load Data
+
+```{r}
+url_citibike<-"https://raw.githubusercontent.com/jcbonilla/BusinessAnalytics/master/BAData/CitiBike%20Data.csv"
+data_citibike<-read.csv(url_citibike, stringsAsFactors = FALSE, header = TRUE)
+head(data_citibike)
+```
+
+## 1.2 Outliners
+
+* tripduration
+
+```{r}
+boxplot(data_citibike$tripduration)
+```
+
+```{r}
+summary(data_citibike$tripduration)
+```
+
+```{r}
+lower_bound_trip<-quantile(data_citibike$tripduration,0.01)
+upper_bound_trip<-quantile(data_citibike$tripduration,0.99)
+```
+
+* age
+
+```{r}
+data_citibike$age<-2020 - as.numeric(data_citibike$birth.year)
+boxplot(data_citibike$age)
+```
+
+```{r}
+summary(data_citibike$age)
+```
+```{r}
+lower_bound_age<-quantile(data_citibike$age, 0.01)
+upper_bound_age<-quantile(data_citibike$age, 0.99)
+```
+
+```{r}
+outliner_index<-which((data_citibike$tripduration < lower_bound_trip | data_citibike$tripduration > upper_bound_trip) | (data_citibike$age < lower_bound_age | data_citibike$age > upper_bound_age))
+anomalies<-data_citibike[outliner_index, ]
+head(anomalies)
+```
+
+* Delete outliners
+
+```{r}
+data_citibike<-data_citibike[-outliner_index, ]
+```
+
+## 1.3 Neighborhoods in highest usage
+
+```{r}
+data_citibike<-subset(data_citibike, data_citibike$usertype=="Subscriber")
+
+data_citibike$starttime<-as.POSIXct(data_citibike$starttime, format = "%m/%d/%y %H:%M")
+breaks<-hour(hm("00:00", "08:00", "12:00", "19:00", "23:59"))
+labels<-c("Evening", "Morning", "Alternative", "Evening")
+
+data_citibike$time<-cut(x=hour(data_citibike$starttime), breaks = breaks, labels = labels, include.lowest
+=TRUE)
+```
+
+### 1.3.1 Morning
+
+```{r}
+usage_morning<-sqldf("select [start.station.id] as station_id, [start.station.name] as station_name, [start.station.latitude] as lat, [start.station.longitude] as long, sum([tripduration]) as total_usage from data_citibike where time like 'Morning' group by [start.station.id] order by total_usage desc limit 5")
+usage_morning
+```
+
+
+```{r}
+ggplot(usage_morning, aes(x=station_name, y=total_usage)) + 
+geom_bar(stat="identity",width=0.5) +
+geom_text(aes(label=total_usage), vjust=1.6, color="white", size=3) +
+ggtitle("Morning")
+```
+
+### 1.3.2 Alternative
+
+```{r}
+usage_alternative<-sqldf("select [start.station.id] as station_id, [start.station.name] as station_name, [start.station.latitude] as lat, [start.station.longitude] as long, sum([tripduration]) as total_usage from data_citibike where time like 'Alternative' group by [start.station.id] order by total_usage desc limit 5")
+usage_alternative
+```
+
+
+```{r}
+ggplot(usage_alternative, aes(x=station_name, y=total_usage)) + 
+geom_bar(stat="identity",width=0.5) +
+geom_text(aes(label=total_usage), vjust=1.6, color="white", size=3) +
+ggtitle("Alternative")
+```
+
+### 1.3.3 Evening
+
+```{r}
+usage_evening<-sqldf("select [start.station.id] as station_id, [start.station.name] as station_name, [start.station.latitude] as lat, [start.station.longitude] as long, sum([tripduration]) as total_usage from data_citibike where time like 'Evening' group by [start.station.id] order by total_usage desc limit 5")
+usage_evening
+```
+
+
+```{r}
+ggplot(usage_evening, aes(x=station_name, y=total_usage)) + 
+geom_bar(stat="identity",width=0.5) +
+geom_text(aes(label=total_usage), vjust=1.6, color="white", size=3) +
+ggtitle("Evening")
+```
+
+## 1.4 Suggestions
+
+1. Schedule regular maintenance plan for bicycles with high frequency of use.
+2. Increase the amount of bicycle in areas with greater bike demand.
+3. Make different pricing strategies according to different user segements.
+4. Count the bicycles that cannot be returned for a long time and replenish new bicycles in time.
+
+# Problem II: Aviation Accidents 
+
+## 2.1 Load Data
+
+```{r}
+aviation_url<-"https://raw.githubusercontent.com/jcbonilla/BusinessAnalytics/master/BAData/aviation.csv"
+aviation<-read.csv(aviation_url, stringsAsFactors = FALSE, header = TRUE)
+head(aviation)
+```
+
+## 2.2 Analysis of fatal vs. non-fatal crashes in the US from the 1940s through 2013
+
+```{r}
+Year<-format(as.Date(aviation$Event.Date, format = "%m/%d/%Y"), "%Y")
+aviation$year<-as.integer(Year)
+accident_us<-sqldf("select * from aviation where [Country] like '%United States%'")
+head(accident_us)
+```
+
+### 2.2.1 Select the crashes records from 1940 to 2013
+
+```{r}
+summary(accident_us$year)
+```
+* All the records are range from 1940 to 2013.
+
+### 2.2.2 Get the number of fatal and non-fatal accidents
+
+```{r}
+accident_us<-mutate(accident_us, accident_category=if_else(accident_us$Injury.Severity==" Non-Fatal ", "non-fatal","fatal"))
+
+non_fatal_crashes<-sqldf("select * from accident_us where [accident_category] = 'non-fatal'")
+fatal_crashes<-sqldf("select * from accident_us where [accident_category] = 'fatal'")
+
+ggplot(data=accident_us, mapping=aes(x=accident_category, fill=accident_category)) + geom_bar(stat="count",width=0.5) + 
+geom_text(stat='count',aes(label=..count..), vjust=1.6, color="white", size=3.5) + 
+theme_minimal()
+```
+* The number of fatal crashes is 9714, and the number of non-fatal crashes is 5324.
+
+### 2.2.3 Number of accidents by year
+
+```{r}
+ggplot() + 
+geom_line(data=non_fatal_crashes, aes(x=year, fill=year, colour="non_fatal"), stat = "count") + geom_point(data=non_fatal_crashes, aes(x=year, fill=year, colour="non_fatal"), stat = "count") +  geom_line(data=fatal_crashes, aes(x=year, fill=year, colour="fatal"),stat = "count") + 
+geom_point(data=fatal_crashes, aes(x=year, fill=year, colour="fatal"), stat = "count") + 
+theme_minimal()
+```
+* Before 1980, due to lack of data, we could not see the annual trend of the number of accidents.
+* Since 1982, the number of fatal and non-fatal accidents has shown a downward trend.
+
+### 2.2.3 Number of accident by engine type
+
+We classify the raw data by the type of engine.
+
+* Fatal
+```{r}
+fatal_by_engine<-sqldf("select [Engine.Type], count(*) as number from fatal_crashes group by [Engine.Type]")
+fatal_by_engine
+```
+* Non-Fatal
+```{r}
+non_fatal_by_engine<-sqldf("select [Engine.Type], count(*) as number from non_fatal_crashes group by [Engine.Type]")
+non_fatal_by_engine
+```
+
+The result shows that there are large amounts of planes in accidents have **Reciprocating** engine. We use the donut chart to show the percentage of these planes.
+
+```{r}
+reci_fatal<-data.frame(Engine.Type=c("Reciprocating", "Else"), number=c(fatal_by_engine[3, 2], sum(fatal_by_engine$number)-fatal_by_engine[3, 2]))
+
+reci_fatal$fraction<-reci_fatal$number/sum(reci_fatal$number)
+reci_fatal$ymax<-cumsum(reci_fatal$fraction)
+reci_fatal$ymin<-c(0,head(reci_fatal$ymax,n=-1))
+
+reci_fatal$labelPosition<-(reci_fatal$ymax + reci_fatal$ymin)/2
+reci_fatal$label<-paste(reci_fatal$Engine.Type, "\n", 
+                        round(reci_fatal$number/sum(reci_fatal$number)*100, 2), "%")
+
+ggplot(reci_fatal, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3)) + 
+geom_rect(aes(fill=Engine.Type)) + 
+geom_label(x=3.5,aes(y=labelPosition,label=label),size=3) +
+xlim(2,4) +
+coord_polar(theta="y") + 
+scale_fill_brewer(palette = 4) + 
+theme_void()+
+theme(legend.position = "none") +
+ggtitle("The Engine Types in Fatal Crashes")
+```
+```{r}
+reci_non_fatal<-data.frame(Engine.Type=c("Reciprocating", "Else"), number=c(non_fatal_by_engine[2, 2], sum(non_fatal_by_engine$number)-non_fatal_by_engine[2, 2]))
+
+reci_non_fatal$fraction<-reci_non_fatal$number/sum(reci_non_fatal$number)
+reci_non_fatal$ymax<-cumsum(reci_non_fatal$fraction)
+reci_non_fatal$ymin<-c(0,head(reci_non_fatal$ymax,n=-1))
+
+reci_non_fatal$labelPosition<-(reci_non_fatal$ymax + reci_non_fatal$ymin)/2
+reci_non_fatal$label<-paste(reci_non_fatal$Engine.Type, "\n", 
+                        round(reci_non_fatal$number/sum(reci_non_fatal$number)*100, 2), "%")
+
+ggplot(reci_non_fatal, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3)) + 
+geom_rect(aes(fill=Engine.Type)) + 
+geom_label(x=3.5,aes(y=labelPosition,label=label),size=3) +
+xlim(2,4) +
+coord_polar(theta="y") + 
+scale_fill_brewer(palette = 4) + 
+theme_void()+
+theme(legend.position = "none") +
+ggtitle("The Engine Types in Non-Fatal Crashes")
+```
+
+### 2.2.4 Number of accident by weather condition
+
+```{r}
+ggplot(data=accident_us, mapping = aes(x=Weather.Condition, fill=accident_category)) + geom_bar(stat="count",width=0.5,position='dodge')+
+geom_text(stat='count',aes(label=..count..), color="black", size=3.5,position=position_dodge(0.5),vjust=-0.5)+
+theme_minimal()
+```
+From the bar chart, we can see that VMC is most likely to cause a plane crash in various weather conditions.
+
+### 2.2.5 Tree map of broad phase
+
+```{r}
+broad<-sqldf("select [Broad.Phase.of.Flight], count(*) as number, accident_category from accident_us group by [Broad.Phase.of.Flight], [accident_category]")
+broad
+```
+```{r}
+ggplot(broad, aes(area=number, fill=number, label=Broad.Phase.of.Flight)) + 
+geom_treemap() + 
+geom_treemap_text(colour = "black", place = "topleft",grow = TRUE, alpha=.5) +
+facet_wrap(~ accident_category) + 
+scale_fill_distiller(palette="Greens")
+```
+In about 75% of accident records, the broad phase of the flight is under these four states: CRUISE, MANEUVERING, APPROACH, TAKEOFF.
+
+## 2.3 Additional analysis
+
+### 2.3.1 Countries with most incidents
+
+Find top 5 countries with accidents
+
+```{r}
+top5<-sqldf("select [Country], count([Country]) as count from aviation where [Country] not like '%  %' group by [Country] order by count desc limit 5")
+top5
+```
+
+The **United States** is the country with the most accidents, with a total of **15,038**.
+
+### 2.3.2 Historical deaths by year
+
+```{r}
+historical_death<-sqldf("select year, sum([Total.Fatal.Injuries]) as deaths from aviation group by year")
+historical_death
+```
+```{r}
+ggplot() + 
+geom_line(data=historical_death, aes(x=year, y=deaths), stat = "identity") + 
+geom_point(data=historical_death, aes(x=year, y=deaths), stat = "identity") +  
+theme_minimal()
+```
+
+# Problem III: Retail Targets
+
+## 3.1 Load Data
+
+```{r}
+retail_url<-"https://raw.githubusercontent.com/jcbonilla/BusinessAnalytics/master/BAData/HDLData.csv"
+data_retail<-read.csv(retail_url, header = TRUE, stringsAsFactors = FALSE)
+head(data_retail)
+```
+
+## 3.2 Aggregate data of NE region
+
+```{r}
+ne_aggregate<-sqldf("select state, sum(pop_2000), sum(pop_2010), avg(income_2000), avg(income_2010), avg(pct_U18_2000), avg(pct_U18_2010), avg(pctcollege_2000), avg(pctcollege_2010), avg(ownhome_2000), avg(ownhome_2010), avg(density_2000) as density_2000, avg(density_2010) as density_2010, avg(pctwhite_2000), avg(pctwhite_2010), avg(pctblack_2000), avg(pctblack_2010) from data_retail where state in ('ME', 'NY', 'NJ', 'VT', 'MA','RI', 'CT', 'NH', 'PA') group By state")
+ne_aggregate$region=c("connecticut", "massachusetts", "maine", "new hampshire", "new jersey", "new york", "pennsylvania", "rhode island", "vermont")
+ne_aggregate
+```
+## 3.3 Calculate the change
+
+```{r}
+ne_change<-data.frame(state=ne_aggregate$state, 
+                      region=c("connecticut", "massachusetts", "maine", "new hampshire", "new jersey", "new york", "pennsylvania", "rhode island", "vermont"),
+                      pop=(ne_aggregate[3] - ne_aggregate[2])/ne_aggregate[2],
+                      income=(ne_aggregate[5] - ne_aggregate[4])/ne_aggregate[4],
+                      pct_u18=(ne_aggregate[7] - ne_aggregate[6])/ne_aggregate[6],
+                      pct_college=(ne_aggregate[9] - ne_aggregate[8])/ne_aggregate[8],
+                      ownhome=round((ne_aggregate[11] - ne_aggregate[10])/ne_aggregate[10], 3),
+                      density=(ne_aggregate[13] - ne_aggregate[12])/ne_aggregate[12],
+                      pct_white=(ne_aggregate[15] - ne_aggregate[14])/ne_aggregate[14],
+                      pct_black=(ne_aggregate[17] - ne_aggregate[16])/ne_aggregate[16])
+names(ne_change)<-c("state", "region", "pop", "income", "pct_u18", "pct_college", "ownhome", "density", "pct_white", "pct_black")
+ne_change
+```
+## 3.4 Population growth rate
+
+```{r}
+MainStates<-map_data("state")
+MergedStates<-inner_join(MainStates, ne_change, by = "region")
+
+ggplot(MergedStates, aes(x=long, y=lat, group=group, fill = pop)) + 
+geom_polygon(color="white", size = 0.2) + 
+scale_fill_continuous(name="Population Growth Rate", low = "#e7e7de", high = "#0f3057",limits = c(0,0.07))
+```
+
+## 3.5 Annual income growth rate per capita
+
+```{r}
+ggplot(data = ne_change, aes(x=state, y=income)) + 
+geom_point(shape=17, size=5, color="#7ea04d") + 
+ylab("Annual income growth rate per capita")
+```
+
+## 3.6 Density
+
+* Density in 2010
+```{r}
+MergedDensity<-inner_join(MainStates, ne_aggregate, by = "region")
+
+ggplot(MergedDensity, aes(x=long, y=lat, group=group, fill = density_2010)) + 
+geom_polygon(color="white", size = 0.2) + 
+scale_fill_continuous(name="Density in 2010", low = "#ed6663", high = "#59405c",limits = c(0,3500))
+```
+* Change rate of Density
+
+```{r}
+ggplot(MergedStates, aes(x=long, y=lat, group=group, fill = density)) + 
+geom_polygon(color="white", size = 0.2) + 
+scale_fill_continuous(name="Change of Density", low = "#ed6663", high = "#59405c",limits = c(0,0.07))
+```
+
+## 3.7 Change rate of ownhome
+
+```{r}
+ggplot(data=ne_change, mapping = aes(x=state, y=ownhome, fill=ownhome)) + 
+geom_bar(stat="identity", width=0.7) + 
+geom_text(aes(label=ownhome), vjust=1.6, color="black", size=3) + 
+scale_fill_continuous(name="Change rate of ownhome", low = "#ff5f40", high = "#24a19c")
+```
+
+## 3.8 Change rate of U18, college, white, and black
+
+```{r}
+pre_change<-data.frame(ne_change$pct_u18, ne_change$pct_college, ne_change$pct_white, ne_change$pct_black)
+mat<-data.matrix(pre_change)
+colnames(mat) = c("pct_u18", "pct_college", "pct_white", "pct_black")
+rownames(mat) = c("CT", "MA", "ME", "NH", "NJ", "NY", "PA", "RI", "VT")
+pheatmap(mat, display_numbers = TRUE, 
+         cluster_cols = FALSE, cluster_rows = FALSE,
+         color = colorRampPalette(c("#ff4b5c","white","#7ea04d"))(1000),
+         fontsize = 12)
+```

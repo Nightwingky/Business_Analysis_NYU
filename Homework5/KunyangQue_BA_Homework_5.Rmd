@@ -1,0 +1,310 @@
+---
+title: 'BA Homework #5'
+author: "Kunyang Que"
+date: "10/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Problem I: Bicycling World
+
+## 1.1 Import Data
+
+```{r}
+data_bicycle<-data.frame(
+  Model=c("Fierro 7B", "HX 5000", "Durbin Ultralight", "Schmidt", "WSilton Advanced", "bicyclette v€lo", "Supremo Team", "XTC Racer", "D'Onofrio Pro", "Americana #6"), 
+  Weight=c(17.9, 16.2, 15.0, 16.0, 17.3, 13.2, 16.3, 17.2, 17.7, 14.2),
+  Price=c(2200, 6350, 8470, 6300, 4100, 8700, 6100, 2680, 3500, 8100))
+```
+
+## 1.2 Scatter Chart
+
+```{r}
+plot(data_bicycle$Weight, data_bicycle$Price)
+```
+
+The Price decreases as Weight increases
+
+## 1.3 Regression
+
+```{r}
+x<-data_bicycle$Weight
+y<-data_bicycle$Price
+
+model_bicycle<-lm(y ~ x)
+model_bicycle
+summary(model_bicycle)
+```
+
+## 1.4 Interpretations
+
+When the weight is raised by 1 level, the price will drop by $1439.
+
+P-value:
+(Intercept)  2.15e-05 
+x            9.99e-05 
+
+If we set the significant level as 0.05, the p-value for both parameters is less than the signigicant level, which means I should reject null hypothesis that both regression parameters are equal to 0.
+
+## 1.5 Variation
+
+R-squared:  0.8637
+86.37% of the data fit the regression model.
+
+# Problem II: Assembly Line Problem
+
+## 2.1 Import Data
+
+```{r}
+data_line<-data.frame(
+  Line_Speed=c(20, 20, 40, 30, 60, 40),
+  Number=c(21, 19, 15, 16, 14, 17))
+```
+
+## 2.2 Scatter Chart
+
+```{r}
+plot(data_line$Line_Speed, data_line$Number)
+```
+
+The number of defective parts found decreases when the line speed increases.
+
+## 2.3 Regression
+
+```{r}
+x<-data_line$Line_Speed
+y<-data_line$Number
+
+model_line<-lm(y ~ x)
+model_line
+summary(model_line)
+```
+
+## 2.4 Significance Level
+
+* The p-value for B0 is less than significance level 0.01. Therefore, I reject null hypothesis 
+that B0 is equal to 0 at 0.01 level of significance. 
+
+* The p-value for B1 is greater than significance level 0.01.For B1. Therefore, I retain the null hypothesis that B1 is equal to 0 at 0.01 level of significance.
+
+## 2.5 Variation
+
+R-squared:  0.7391
+73.91% of the data fit the regression model.
+
+# Problem III: Jensen Tire & Auto Problem
+
+## 3.1 Import Data
+
+```{r}
+data_jensen<-data.frame(
+  weekly_usage=c(13, 10, 20, 28, 32, 17, 24, 31, 40, 38),
+  maintenance=c(17.0, 22.0, 30.0, 37.0, 47.0, 30.5, 32.5, 39.0, 51.5, 40.0))
+```
+
+## 3.2 Scatter Chart
+
+```{r}
+plot(data_jensen$weekly_usage, data_jensen$maintenance)
+```
+
+The scatter chart shows that there is a strong linear relationship between the weekly usage and the maintenance. With the weekly usage increase, the maintenance increase as well.
+
+## 3.3 Regression
+
+```{r}
+x<-data_jensen$weekly_usage
+y<-data_jensen$maintenance
+
+model_jensen<-lm(y ~ x)
+model_jensen
+summary(model_jensen)
+```
+
+# Problem IV: Toyota Problem
+
+## 4.1 Import Data
+
+```{r}
+data_toyota<-data.frame(
+  miles=c(22, 29, 36, 47, 63, 77, 73, 87, 92, 101, 110, 28, 59, 68, 68, 91, 42, 65, 110),
+  price=c(16.2, 16.0, 13.8, 11.5, 12.5, 12.9, 11.2, 13.0, 11.8, 10.8, 8.3, 12.5, 11.1, 15.0, 12.2, 13.0, 15.6, 12.7, 8.3))
+```
+
+## 4.2 Scatter Chart
+
+```{r}
+plot(data_toyota$miles, data_toyota$price)
+```
+
+## 4.3 Regession Model
+
+```{r}
+x<-data_toyota$miles
+y<-data_toyota$price
+
+model_toyota<-lm(y ~ x)
+model_toyota
+summary(model_toyota)
+```
+## 4.4 Significance Test
+
+If we set the significance level as 0.01, the summary of the model shows that the p-value for both regression parameters are less than the significance level.Therefore, I reject null hypothesis that both regression parameters are equal to 0 at 0.01 level of significance.
+
+## 4.5 Variation
+
+Multiple R-squared:  0.5387
+53.87% of the data fit the regression model.
+
+## 4.6 Predict Price and Residual
+
+```{r}
+prediction<-function(x) {
+  return (16.46976 - 0.05877 * x) 
+}
+
+pre_price<-prediction(data_toyota$miles)
+pre_price
+```
+
+```{r}
+residual<-data_toyota$price - pre_price
+residual
+```
+
+Miles: 47000  Price: $11500
+Miles: 28000  Price: $12500
+
+## 4.7 Prediction
+
+```{r}
+prediction(60)
+```
+
+According to the model, I should have priced it at $12,944. But before I put a price on the seller, I will estimate about other aspects of the car.
+
+# Problem V: Dodger Stadium Attendance
+
+## 5.1 Import Data
+
+```{r}
+url<-"https://raw.githubusercontent.com/jcbonilla/BusinessAnalytics/master/BAData/dodgers.csv"
+data_dodger<-read.csv(url, stringsAsFactors = TRUE, header = T)
+head(data_dodger)
+```
+
+## 5.2 Exploratory Data Analysis
+
+### a.
+```{r}
+summary(data_dodger)
+```
+
+Cap: 2
+Shirt: 3
+Fireworks: 14
+Bobblehead: 11
+Total: 30
+
+### b. 
+
+```{r}
+library(dplyr)
+data_dodger<-mutate(data_dodger, promotion=if_else(data_dodger$cap == "YES", 1, 
+                                                   if_else(data_dodger$shirt == "YES", 1, 
+                                                           if_else(data_dodger$fireworks == "YES", 1, 
+                                                                   if_else(data_dodger$bobblehead == "YES", 1, 0)))))
+```
+
+```{r}
+data_pro<-subset(data_dodger, data_dodger$promotion == 1)
+data_non<-subset(data_dodger, data_dodger$promotion == 0)
+
+mean(data_pro$attend)
+mean(data_non$attend)
+```
+
+### c.
+
+Temperature
+```{r}
+library(ggplot2)
+ggplot(data_dodger, aes(x=temp, y=attend)) + geom_point()
+```
+
+
+### d. 
+
+```{r}
+library(sqldf)
+mean(data_dodger$attend)
+```
+
+```{r}
+dodger_team<-sqldf("select opponent, avg(attend) as avg_attend from data_dodger group by opponent order by avg_attend desc")
+dodger_team
+```
+
+```{r}
+sqldf("select opponent, avg_attend from dodger_team where avg_attend > 41040.07")
+```
+
+## 5.3 Predictive Modeling
+
+### a. 
+
+```{r}
+sqldf("select avg(attend) from data_dodger where bobblehead == 'YES'")
+```
+
+### b.
+
+```{r}
+sqldf("select avg(attend) from data_dodger where cap == 'YES'")
+```
+
+```{r}
+sqldf("select avg(attend) from data_dodger where shirt == 'YES'")
+```
+
+```{r}
+sqldf("select avg(attend) from data_dodger where fireworks == 'YES'")
+```
+
+When Bobblehead had promotions, the attendance was the highest of all times. Therefore, I would say the Bobblehead promotions are better than all other promotions.
+
+### c.
+
+```{r}
+bobble<-sqldf("select * from data_dodger where bobblehead == 'YES'")
+bobble
+```
+```{r}
+mean(bobble$attend)
+mean(data_non$attend)
+mean(bobble$attend) - mean(data_non$attend)
+```
+
+Compared with the day without any promotion, each Bobblehead promotion brings an increase in attendance of 14943.56.
+
+```{r}
+summer<-sqldf("select * from data_dodger where month in ('JUN', 'JUL', 'AUG')")
+summer
+```
+
+```{r}
+length(summer$attend)
+sum(summer$attend)
+```
+
+Now we have 36 events with the attendance of 1599348.
+
+```{r}
+(1599348 - 38201.08 * 36) / 14943.56
+```
+In order to reach an attendance of 1599348, Bobblehead Promotion shall be held at least 15 times without consideration of other promotions.
+
+
