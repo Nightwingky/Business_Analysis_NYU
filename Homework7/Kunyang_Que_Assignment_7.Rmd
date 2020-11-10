@@ -1,0 +1,148 @@
+---
+title: "Kunyang_Que_Assignment_7"
+author: "Kunyang Que"
+date: "11/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Problem I: Student Application Data
+
+## Load Data
+
+```{r}
+url<-"https://raw.githubusercontent.com/jcbonilla/BusinessAnalytics/master/BAData/Univ%20Admissions.csv"
+data_student<-read.csv(url, header = TRUE, stringsAsFactors = TRUE)
+head(data_student)
+```
+
+```{r}
+summary(data_student)
+```
+
+## Transform
+
+```{r}
+column_convert<-sapply(data_student, is.factor)
+convert_data<-sapply(data_student[, column_convert], unclass)
+data_student_numeric<-cbind(data_student[, !column_convert], convert_data)
+head(data_student_numeric)
+```
+
+## Logistic Regression
+
+```{r}
+library(dplyr)
+data_student_numeric<-mutate(data_student_numeric, apply_status=if_else(data_student_numeric$x.Status.1==1, 1, 0))
+```
+
+### Train-Test Split
+
+```{r}
+set.seed(100)
+split<-(.8)
+trainingRowIndex <- sample(1:nrow(data_student_numeric),(split)*nrow(data_student_numeric))
+trainingData <- data_student_numeric[trainingRowIndex, ] 
+testData <- data_student_numeric[-trainingRowIndex, ] 
+dim(trainingData)
+dim(testData)
+```
+
+```{r}
+model<-{apply_status ~ x.GPA + x.DistancetoCampus_miles + x.HouseholdIncome + x.Country + x.State + x.Gender + x.Source + x.SAT_Score + x.InState}
+admit.lm <- glm(model, data=trainingData, family = binomial(link = "logit")) 
+summary(admit.lm)
+```
+
+```{r}
+response<- ifelse(predict(admit.lm, testData, type = "response")>.5, 1, 0) # predict distance
+actuals_preds <- data.frame(cbind(actuals=testData$apply_status, predicted=response))
+head(actuals_preds)
+
+correlation_accuracy <- cor(actuals_preds)
+correlation_accuracy
+```
+
+## Naive Bayes
+
+```{r}
+apart.data <- function(data, percent = 0.7) {
+   train.index <- sample(c(1:nrow(data)),round(percent*nrow(data)))
+   data.train <- data[train.index,]
+   data.test <- data[-c(train.index),]
+   result <- list(train = data.train, test = data.test)
+   result
+ }
+p.data <- apart.data(data_student_numeric)
+data.train <- p.data$train
+data.test <- p.data$test
+```
+
+```{r}
+mod.formula <- as.formula("x.Status.1 ~ x.GPA + x.DistancetoCampus_miles + x.HouseholdIncome + x.Country + x.State + x.Gender + x.Source + x.SAT_Score + x.InState")
+library("e1071")
+nb.sol <- naiveBayes(mod.formula, data.train);nb.sol
+```
+
+```{r}
+nb.predict <- predict(nb.sol, newdata = data.test)
+nb.predict
+```
+
+# Problem II: Bank Marketing
+
+## Load Data
+
+```{r}
+url<-"https://raw.githubusercontent.com/jcbonilla/BusinessAnalytics/master/BAData/bank_marketing.csv"
+data_bank<-read.csv(url, header = TRUE, stringsAsFactors = TRUE)
+head(data_bank)
+```
+
+```{r}
+summary(data_bank)
+```
+
+## Transform
+
+```{r}
+column_convert<-sapply(data_bank, is.factor)
+convert_data<-sapply(data_bank[, column_convert], unclass)
+data_bank_numeric<-cbind(data_bank[, !column_convert], convert_data)
+data_bank_numeric$y<-ifelse(1, 0, 1)
+head(data_bank_numeric)
+```
+
+### Train-Test Split
+
+```{r}
+set.seed(100)
+split<-(.8)
+trainingRowIndex <- sample(1:nrow(data_bank_numeric),(split)*nrow(data_bank_numeric))
+trainingData <- data_bank_numeric[trainingRowIndex, ] 
+testData <- data_bank_numeric[-trainingRowIndex, ] 
+dim(trainingData)
+dim(testData)
+```
+
+```{r}
+model<-{y ~ age + job + marital + education + default + housing + loan + contact + month + day_of_week + duration + campaign + pdays + previous + poutcome + emp.var.rate + cons.price.idx + cons.conf.idx + euribor3m + nr.employed}
+admit.lm <- glm(model, data=trainingData, family = binomial(link = "logit")) 
+summary(admit.lm)
+```
+
+```{r}
+response<- ifelse(predict(admit.lm, testData, type = "response")>.5, 1, 0) # predict distance
+actuals_preds <- data.frame(cbind(actuals=testData$y, predicted=response))
+head(actuals_preds)
+
+correlation_accuracy <- cor(actuals_preds)
+correlation_accuracy
+```
+
+
+
+
