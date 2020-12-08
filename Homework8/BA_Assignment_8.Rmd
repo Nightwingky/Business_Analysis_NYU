@@ -1,0 +1,202 @@
+---
+title: "BA_Assignment_8"
+author: "Kunyang Que"
+date: "12/7/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# PART 1: Exploratory Data Analysis & Text Analytics
+
+## 1.1 How many complaints have been generated? 
+
+```{r}
+url<-"/Users/kunyangque/Documents/NYUTandon/course/Business Analysis/BA_Assignment/Homework8/Consumer_Complaints.csv"
+data_part_1<-read.csv(url, header=TRUE, stringsAsFactors=FALSE)
+
+dim(data_part_1) # dim of file
+head(data_part_1)
+```
+
+* There are 257341 complaints.
+
+## 1.2 How many are unique or recurring? 
+
+```{r}
+library(sqldf)
+count_issue<-sqldf("select [Issue], count([Issue]) as num from data_part_1 group by [Issue] order by num")
+count_issue
+```
+```{r}
+sqldf("select count([Issue]) from count_issue where num > 1")
+```
+
+* Regarding the column [Issue], there are only 1 issue, Property was damaged or destroyed property, is unique, and other 80 issues are recurring.
+
+## 1.3 Using “Consumer.complaint.narrative”, what can you say about the type of complaints in this report?
+
+```{r}
+library(quanteda)
+
+data_part_1$Consumer.complaint.narrative <- gsub("'", "", data_part_1$Consumer.complaint.narrative) # remove apostrophes
+data_part_1$Consumer.complaint.narrative <- gsub("[[:punct:]]", " ", data_part_1$Consumer.complaint.narrative)  # replace punctuation with space
+data_part_1$Consumer.complaint.narrative <- gsub("[[:cntrl:]]", " ", data_part_1$Consumer.complaint.narrative)  # replace control characters with space
+data_part_1$Consumer.complaint.narrative <- gsub("^[[:space:]]+", "", data_part_1$Consumer.complaint.narrative) # remove whitespace at beginning of documents
+data_part_1$Consumer.complaint.narrative <- gsub("[[:space:]]+$", "", data_part_1$Consumer.complaint.narrative) # remove whitespace at end of documents
+data_part_1$Consumer.complaint.narrative <- gsub("[^a-zA-Z -]", " ", data_part_1$Consumer.complaint.narrative) # allows only letters
+data_part_1$Consumer.complaint.narrative <- tolower(data_part_1$Consumer.complaint.narrative)  # force to lowercase
+```
+
+```{r}
+corpus_part_1<-corpus(data_part_1$Consumer.complaint.narrative,
+                    docnames=data_part_1$Complaint.ID,
+                    docvar=data.frame(Issue=data_part_1$Issue,
+                                      ID=data_part_1$Date.received))
+```
+
+```{r}
+dfm.simple<- dfm(corpus_part_1, 
+                 remove = stopwords("english"), 
+                 verbose=TRUE, 
+                 stem=FALSE)
+
+topfeatures(dfm.simple, n=50)
+```
+
+```{r}
+swlist = c("xxxx", "xx","told", "back", "also", "can", "one", "get","said", 
+           "made", "now", "days", "s", "still", "since", "date")
+
+dfm<- dfm(corpus_part_1, 
+          remove = c(swlist,stopwords("english")), 
+          verbose=TRUE, 
+          stem=FALSE)
+
+topfeatures(dfm, n=50)
+```
+
+```{r}
+dfm.stem<- dfm(corpus_part_1, 
+               remove = c(swlist,stopwords("english")), 
+               verbose=TRUE, 
+               stem=TRUE)
+
+topfeatures(dfm.stem, n=50)
+```
+
+* From the word frequency analysis, we can see that the words "account", "credit", "report", "payment" and "call" appear quite frequently. Almost 80% percent of the complaints have mentioned the problem about their bank account and credit issues.
+
+## 1.4 What type of product issues & complaints are the most frequent?
+
+* Here are Top 5 issues.
+
+```{r}
+sqldf("select * from count_issue order by num desc limit 5")
+```
+
+* The most frequent complaints are about "account" and "credit" issues. 
+
+## 1.5 Complete a sentiment analysis for all the types of complaint submissions observed during this year.
+
+```{r}
+mydict <- dictionary(list(negative = c("detriment*", "bad*", "awful*", "terrib*", "horribl*"),
+                          postive = c("good", "great", "super*", "excellent", "yay")))
+
+dfm.sentiment <- dfm(corpus_part_1, 
+                     remove = c(swlist,stopwords("english")), 
+                     verbose=TRUE, 
+                     dictionary = mydict,
+                     stem=FALSE)
+topfeatures(dfm.sentiment)
+```
+* According to our definition, there are 20183 complaints contains postive words and 5488 complains contains negative words.
+
+# PART 2: Steve Jobs Commencemnt Speech
+
+```{r}
+library(readtext)
+url_jobs<-"https://raw.githubusercontent.com/jcbonilla/BusinessAnalytics/master/BAData/JobsStandfordSpeech.txt"
+text_jobs<-readtext(url_jobs)
+```
+
+```{r}
+text_jobs$text <- gsub("'", "", text_jobs$text) # remove apostrophes
+text_jobs$text <- gsub("[[:punct:]]", " ", text_jobs$text)  # replace punctuation with space
+text_jobs$text <- gsub("[[:cntrl:]]", " ", text_jobs$text)  # replace control characters with space
+text_jobs$text <- gsub("^[[:space:]]+", "", text_jobs$text) # remove whitespace at beginning of documents
+text_jobs$text <- gsub("[[:space:]]+$", "", text_jobs$text) # remove whitespace at end of documents
+text_jobs$text <- gsub("[^a-zA-Z -]", " ", text_jobs$text) # allows only letters
+text_jobs$text <- tolower(text_jobs$text)  # force to lowercase
+```
+
+```{r}
+corpus_part_2<-corpus(text_jobs$text,
+                    docnames=text_jobs$doc_id)
+```
+
+```{r}
+dfm.simple<- dfm(corpus_part_2, 
+                 remove = stopwords("english"), 
+                 verbose=TRUE, 
+                 stem=FALSE)
+
+topfeatures(dfm.simple, n=50)
+```
+
+```{r}
+swlist = c("t", "s","don", "didn", "can", "ve")
+
+dfm<- dfm(corpus_part_2, 
+          remove = c(swlist,stopwords("english")), 
+          verbose=TRUE, 
+          stem=FALSE)
+
+topfeatures(dfm, n=50)
+```
+
+```{r}
+dfm.stem<- dfm(corpus_part_2, 
+               remove = c(swlist,stopwords("english")), 
+               verbose=TRUE, 
+               stem=TRUE)
+
+topfeatures(dfm.stem, n=50)
+```
+* "Life" appeared 17 times and "College" 14 times during Jobs' speech.
+
+```{r}
+kwic(corpus_part_2, "life", 3)
+```
+
+```{r}
+kwic(corpus_part_2 , "college", window = 3)
+```
+
+* Jobs spoke many times about his college experience and the transition in his life.
+
+```{r}
+library(tm)
+dfm.tm<-convert(dfm, to="tm")
+dfm.tm
+findAssocs(dfm.tm, 
+           c("college", "graduate"), 
+           corlimit=0.7)
+```
+
+```{r}
+library(wordcloud)
+set.seed(142)   #keeps cloud' shape fixed
+dark2 <- brewer.pal(8, "Set1")   
+freq<-topfeatures(dfm, n=500)
+
+wordcloud(names(freq), 
+          freq, max.words=200, 
+          scale=c(3, .1), 
+          colors=brewer.pal(8, "Set1"))
+```
+
+
+
